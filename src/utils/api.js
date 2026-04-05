@@ -51,14 +51,20 @@ export const api = {
   async getCosts(accountId, params = {}) {
     const query = new URLSearchParams(params).toString();
     const res = await fetch(`${BASE_URL}/usage/${accountId}/costs?${query}`);
-    if (!res.ok) throw new Error('Failed to fetch costs');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to fetch costs');
+    }
     return res.json();
   },
 
   async getCompletions(accountId, params = {}) {
     const query = new URLSearchParams(params).toString();
     const res = await fetch(`${BASE_URL}/usage/${accountId}/completions?${query}`);
-    if (!res.ok) throw new Error('Failed to fetch completions');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to fetch completions');
+    }
     return res.json();
   },
 

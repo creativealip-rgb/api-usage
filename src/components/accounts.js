@@ -218,6 +218,9 @@ function accountCardHTML(acc) {
           <div class="auth-type-badge ${isOAuth ? 'oauth' : 'apikey'}">
             ${isOAuth ? '🔐 OAuth' : '🔑 API Key'}
           </div>
+          <div style="font-size:0.68rem;color:var(--text-muted);margin-top:6px;">
+            ${isOAuth ? 'Profile only (no detailed usage/cost)' : 'Full usage + cost access'}
+          </div>
         </div>
         <span class="account-status ${statusClass}">
           <span class="status-dot"></span>

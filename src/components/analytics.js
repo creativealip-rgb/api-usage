@@ -34,6 +34,8 @@ export function renderAnalytics(container, { accounts, Chart }) {
       <p>Deep dive into your API usage patterns</p>
     </div>
 
+    <div id="usage-warning" style="display:none;margin-bottom:12px;padding:10px 12px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.08);color:#f59e0b;border-radius:10px;font-size:12px;"></div>
+
     <div class="analytics-filters">
       <label>Account:</label>
       <select class="custom-select" id="analytics-account-filter">
@@ -162,13 +164,32 @@ async function loadAnalyticsData(accounts, accountFilter, range, Chart) {
         api.getAllCompletions(params),
       ]);
     } else {
-      const [costData, compData] = await Promise.all([
-        api.getCosts(accountFilter, { ...params, group_by: undefined }),
-        api.getCompletions(accountFilter, params),
-      ]);
       const acc = accounts.find((a) => a.id === accountFilter);
-      costsResults = [{ accountId: accountFilter, label: acc?.label || 'Unknown', data: costData }];
-      completionsResults = [{ accountId: accountFilter, label: acc?.label || 'Unknown', data: compData }];
+      try {
+        const [costData, compData] = await Promise.all([
+          api.getCosts(accountFilter, { ...params, group_by: undefined }),
+          api.getCompletions(accountFilter, params),
+        ]);
+        costsResults = [{ accountId: accountFilter, label: acc?.label || 'Unknown', data: costData }];
+        completionsResults = [{ accountId: accountFilter, label: acc?.label || 'Unknown', data: compData }];
+      } catch (err) {
+        costsResults = [{ accountId: accountFilter, label: acc?.label || 'Unknown', error: err.message }];
+        completionsResults = [{ accountId: accountFilter, label: acc?.label || 'Unknown', error: err.message }];
+      }
+    }
+
+    const warningEl = document.getElementById('usage-warning');
+    const unsupported = [...costsResults, ...completionsResults].filter((r) =>
+      typeof r?.error === 'string' && r.error.toLowerCase().includes('oauth')
+    );
+    if (warningEl) {
+      if (unsupported.length > 0) {
+        warningEl.style.display = 'block';
+        warningEl.textContent = 'Selected OAuth account is profile-only. Detailed analytics require Admin API Key account.';
+      } else {
+        warningEl.style.display = 'none';
+        warningEl.textContent = '';
+      }
     }
 
     renderCostTrendChart(costsResults, Chart);

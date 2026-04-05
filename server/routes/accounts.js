@@ -80,6 +80,7 @@ accountsRouter.get('/', (req, res) => {
   const accounts = readAccounts();
   const safeAccounts = accounts.map(({ apiKey, accessToken, refreshToken, ...rest }) => {
     const safe = { ...rest };
+    safe.supportsUsage = rest.authType !== 'oauth';
     if (rest.authType === 'oauth') {
       safe.tokenPreview = accessToken ? `${accessToken.slice(0, 12)}...${accessToken.slice(-4)}` : '';
       // Check if expired
@@ -135,6 +136,7 @@ accountsRouter.post('/', (req, res) => {
 
   // Return safe version
   const { apiKey: _, accessToken: _at, refreshToken: _rt, ...safeAccount } = newAccount;
+  safeAccount.supportsUsage = !isOAuth;
   if (isOAuth) {
     safeAccount.tokenPreview = accessToken ? `${accessToken.slice(0, 12)}...${accessToken.slice(-4)}` : '';
   } else {
@@ -168,6 +170,7 @@ accountsRouter.put('/:id', (req, res) => {
   writeAccounts(accounts);
 
   const { apiKey: _, accessToken: _at, refreshToken: _rt, ...safeAccount } = accounts[index];
+  safeAccount.supportsUsage = accounts[index].authType !== 'oauth';
   if (accounts[index].authType === 'oauth') {
     safeAccount.tokenPreview = accounts[index].accessToken
       ? `${accounts[index].accessToken.slice(0, 12)}...${accounts[index].accessToken.slice(-4)}`

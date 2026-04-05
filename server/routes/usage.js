@@ -19,6 +19,12 @@ function readAccounts() {
   }
 }
 
+function ensureUsageCapable(account) {
+  // Organization usage/cost endpoints require Admin API Key scope.
+  // OAuth user tokens can validate profile but generally cannot read org usage details.
+  return account?.authType !== 'oauth';
+}
+
 async function fetchOpenAI(token, endpoint, params = {}) {
   const url = new URL(`https://api.openai.com/v1/organization/${endpoint}`);
   Object.entries(params).forEach(([key, value]) => {
@@ -58,6 +64,10 @@ usageRouter.get('/:accountId/costs', async (req, res) => {
     return res.status(404).json({ error: 'Account not found' });
   }
 
+  if (!ensureUsageCapable(account)) {
+    return res.status(403).json({ error: 'OAuth account cannot access detailed org usage. Add an Admin API Key account.' });
+  }
+
   const token = getAccountToken(account);
   if (!token) {
     return res.status(401).json({ error: 'Token expired or missing' });
@@ -90,6 +100,10 @@ usageRouter.get('/:accountId/completions', async (req, res) => {
     return res.status(404).json({ error: 'Account not found' });
   }
 
+  if (!ensureUsageCapable(account)) {
+    return res.status(403).json({ error: 'OAuth account cannot access detailed org usage. Add an Admin API Key account.' });
+  }
+
   const token = getAccountToken(account);
   if (!token) {
     return res.status(401).json({ error: 'Token expired or missing' });
@@ -117,6 +131,9 @@ usageRouter.get('/all/costs', async (req, res) => {
 
   const results = await Promise.allSettled(
     accounts.map(async (account) => {
+      if (!ensureUsageCapable(account)) {
+        return { accountId: account.id, label: account.label, error: 'OAuth profile-only account (usage not supported)' };
+      }
       const token = getAccountToken(account);
       if (!token) {
         return { accountId: account.id, label: account.label, error: 'Token expired' };
@@ -148,6 +165,9 @@ usageRouter.get('/all/completions', async (req, res) => {
 
   const results = await Promise.allSettled(
     accounts.map(async (account) => {
+      if (!ensureUsageCapable(account)) {
+        return { accountId: account.id, label: account.label, error: 'OAuth profile-only account (usage not supported)' };
+      }
       const token = getAccountToken(account);
       if (!token) {
         return { accountId: account.id, label: account.label, error: 'Token expired' };

@@ -14,6 +14,7 @@ export function renderDashboard(container, { accounts, Chart }) {
     </div>
 
     ${hasAccounts ? `
+      <div id="usage-warning" style="display:none;margin-bottom:12px;padding:10px 12px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.08);color:#f59e0b;border-radius:10px;font-size:12px;"></div>
       <div class="date-range-bar">
         <button class="date-range-btn active" data-range="7d">7 Days</button>
         <button class="date-range-btn" data-range="30d">30 Days</button>
@@ -165,6 +166,20 @@ async function loadDashboardData(accounts, range, Chart) {
         bucket_width: '1d',
       }),
     ]);
+
+    const warningEl = document.getElementById('usage-warning');
+    const unsupported = [...costsResults, ...completionsResults].filter((r) =>
+      typeof r?.error === 'string' && r.error.toLowerCase().includes('oauth')
+    );
+    if (warningEl) {
+      if (unsupported.length > 0) {
+        warningEl.style.display = 'block';
+        warningEl.textContent = 'Some OAuth accounts are profile-only and cannot show detailed org usage/cost. Add Admin API Key accounts for full analytics.';
+      } else {
+        warningEl.style.display = 'none';
+        warningEl.textContent = '';
+      }
+    }
 
     // Aggregate stats
     let totalCost = 0;
