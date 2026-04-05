@@ -212,7 +212,7 @@ async function detectCodexCLI(onAccountsChange, manual = false) {
     } else {
       area.innerHTML = '';
       if (manual) {
-        showToast('No Codex CLI auth file found on server (~/.codex/auth.json or ~/.config/codex/auth.json).', 'info');
+        showToast('No auth file found on server (~/.codex/auth.json, ~/.config/codex/auth.json, or ~/.hermes/auth.json).', 'info');
       }
     }
   } catch {

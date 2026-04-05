@@ -11,9 +11,9 @@ const ACCOUNTS_FILE = join(__dirname, '..', 'data', 'accounts.json');
 
 export const accountsRouter = Router();
 
-// Helper to extract tokens from Codex auth.json (handles nested and flat format)
+// Helper to extract tokens from Codex/Hermes auth.json (handles nested, flat, and provider formats)
 function extractCodexTokens(data) {
-  // Nested format: { tokens: { access_token, refresh_token, account_id } }
+  // Format A: { tokens: { access_token, refresh_token, account_id } }
   if (data.tokens && data.tokens.access_token) {
     return {
       accessToken: data.tokens.access_token,
@@ -21,7 +21,8 @@ function extractCodexTokens(data) {
       accountId: data.tokens.account_id || '',
     };
   }
-  // Flat format: { access_token, refresh_token, expires_at }
+
+  // Format B: { access_token, refresh_token, expires_at }
   if (data.access_token) {
     return {
       accessToken: data.access_token,
@@ -29,6 +30,32 @@ function extractCodexTokens(data) {
       accountId: '',
     };
   }
+
+  // Format C (Hermes/Codex multi-provider):
+  // { providers: { "openai-codex": { tokens: { access_token, refresh_token } } }, active_provider }
+  if (data.providers && typeof data.providers === 'object') {
+    const providerKey = data.active_provider || 'openai-codex';
+    const provider = data.providers[providerKey] || data.providers['openai-codex'];
+    if (provider?.tokens?.access_token) {
+      return {
+        accessToken: provider.tokens.access_token,
+        refreshToken: provider.tokens.refresh_token || '',
+        accountId: provider.tokens.account_id || '',
+      };
+    }
+  }
+
+  // Format D (credential pool)
+  // { credential_pool: { "openai-codex": [{ access_token, refresh_token }] } }
+  if (data.credential_pool?.['openai-codex']?.[0]?.access_token) {
+    const t = data.credential_pool['openai-codex'][0];
+    return {
+      accessToken: t.access_token,
+      refreshToken: t.refresh_token || '',
+      accountId: t.account_id || '',
+    };
+  }
+
   return null;
 }
 
@@ -309,6 +336,7 @@ accountsRouter.get('/detect-codex', (req, res) => {
   const possiblePaths = [
     join(homeDir, '.codex', 'auth.json'),
     join(homeDir, '.config', 'codex', 'auth.json'),
+    join(homeDir, '.hermes', 'auth.json'),
   ];
 
   const results = [];
@@ -348,6 +376,7 @@ accountsRouter.post('/import-codex', (req, res) => {
   const allowedPaths = [
     join(homeDir, '.codex', 'auth.json'),
     join(homeDir, '.config', 'codex', 'auth.json'),
+    join(homeDir, '.hermes', 'auth.json'),
   ];
 
   if (!allowedPaths.includes(authPath)) {
