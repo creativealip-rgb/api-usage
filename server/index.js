@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { accountsRouter } from './routes/accounts.js';
 import { usageRouter } from './routes/usage.js';
+import { openclawRouter } from './routes/openclaw.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import fs from 'fs';
@@ -29,6 +30,7 @@ app.use(express.json());
 // Routes
 app.use('/api/accounts', accountsRouter);
 app.use('/api/usage', usageRouter);
+app.use('/api/openclaw', openclawRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {

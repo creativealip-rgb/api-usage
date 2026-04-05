@@ -112,4 +112,13 @@ export const api = {
     }
     return res.json();
   },
+
+  async getOpenClawUsage() {
+    const res = await fetch(`${BASE_URL}/openclaw/usage`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to fetch OpenClaw usage');
+    }
+    return res.json();
+  },
 };

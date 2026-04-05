@@ -154,6 +154,15 @@ async function loadDashboardData(accounts, range, Chart) {
   const timeRange = getTimeRange(range);
 
   try {
+    const usageCapable = accounts.some((a) => a.supportsUsage !== false);
+
+    if (!usageCapable) {
+      await loadOpenClawSessionUsage(accounts);
+      if (costChartInstance) { costChartInstance.destroy(); costChartInstance = null; }
+      if (tokenChartInstance) { tokenChartInstance.destroy(); tokenChartInstance = null; }
+      return;
+    }
+
     const [costsResults, completionsResults] = await Promise.all([
       api.getAllCosts({
         start_time: timeRange.start_time,
@@ -266,6 +275,43 @@ async function loadDashboardData(accounts, range, Chart) {
 
   } catch (err) {
     console.error('Dashboard data load error:', err);
+  }
+}
+
+async function loadOpenClawSessionUsage(accounts) {
+  const data = await api.getOpenClawUsage();
+  const sessions = data?.sessions?.recent || [];
+
+  const fresh = sessions.filter((s) => s.totalTokensFresh && typeof s.totalTokens === 'number');
+  const totalTokens = fresh.reduce((sum, s) => sum + (s.totalTokens || 0), 0);
+  const totalInput = fresh.reduce((sum, s) => sum + (s.inputTokens || 0), 0);
+  const totalOutput = fresh.reduce((sum, s) => sum + (s.outputTokens || 0), 0);
+
+  const totalRequests = fresh.length;
+
+  document.getElementById('total-cost').textContent = 'N/A (session telemetry)';
+  document.getElementById('total-requests').textContent = formatNumber(totalRequests);
+  document.getElementById('total-input-tokens').textContent = formatTokens(totalInput);
+  document.getElementById('total-output-tokens').textContent = formatTokens(totalOutput);
+
+  const warningEl = document.getElementById('usage-warning');
+  if (warningEl) {
+    warningEl.style.display = 'block';
+    warningEl.textContent = 'Showing OpenClaw session telemetry (not official OpenAI billing). Add Admin API Key account for official org cost/usage.';
+  }
+
+  const tbody = document.getElementById('account-table-body');
+  if (tbody) {
+    tbody.innerHTML = fresh.slice(0, 20).map((s) => `
+      <tr>
+        <td class="model-name">${s.key || s.sessionId || 'Session'}</td>
+        <td><span class="account-status active"><span class="status-dot"></span>active</span></td>
+        <td class="number">N/A</td>
+        <td class="number">${formatNumber(1)}</td>
+        <td class="number">${formatTokens(s.inputTokens || 0)}</td>
+        <td class="number">${formatTokens(s.outputTokens || 0)}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:30px;">No fresh session telemetry available</td></tr>';
   }
 }
 
