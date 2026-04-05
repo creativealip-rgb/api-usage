@@ -11,6 +11,10 @@ export function renderAccounts(container, { accounts, onAccountsChange }) {
         <p>Manage your OpenAI accounts for usage monitoring</p>
       </div>
       <div style="display:flex;gap:10px;">
+        <button class="btn btn-ghost" id="btn-detect-codex" title="Detect Codex CLI auth file">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Detect Codex CLI
+        </button>
         <button class="btn btn-ghost" id="btn-add-oauth" title="Add via OAuth Token">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           OAuth
@@ -33,17 +37,25 @@ export function renderAccounts(container, { accounts, onAccountsChange }) {
     </div>
   `;
 
-  // Detect Codex CLI
+  // Detect Codex CLI on first render
   detectCodexCLI(onAccountsChange);
 
   // Wire up add buttons
   const addBtn = document.getElementById('btn-add-account');
+  const detectBtn = document.getElementById('btn-detect-codex');
   const addOAuthBtn = document.getElementById('btn-add-oauth');
   const addTrigger = document.getElementById('add-account-trigger');
 
   addBtn.addEventListener('click', () => openModalWithAuthType('apiKey'));
   addOAuthBtn.addEventListener('click', () => openModalWithAuthType('oauth'));
   addTrigger.addEventListener('click', () => openModalWithAuthType('apiKey'));
+  detectBtn.addEventListener('click', async () => {
+    detectBtn.disabled = true;
+    detectBtn.textContent = 'Detecting...';
+    await detectCodexCLI(onAccountsChange, true);
+    detectBtn.disabled = false;
+    detectBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Detect Codex CLI';
+  });
 
   // Wire up account card actions
   accounts.forEach((acc) => {
@@ -147,7 +159,7 @@ export function renderAccounts(container, { accounts, onAccountsChange }) {
   });
 }
 
-async function detectCodexCLI(onAccountsChange) {
+async function detectCodexCLI(onAccountsChange, manual = false) {
   const area = document.getElementById('codex-detect-area');
   if (!area) return;
 
@@ -197,9 +209,16 @@ async function detectCodexCLI(onAccountsChange) {
           });
         }
       });
+    } else {
+      area.innerHTML = '';
+      if (manual) {
+        showToast('No Codex CLI auth file found on server (~/.codex/auth.json or ~/.config/codex/auth.json).', 'info');
+      }
     }
   } catch {
-    // Silently fail — detection is optional
+    if (manual) {
+      showToast('Failed to detect Codex CLI auth file.', 'error');
+    }
   }
 }
 
