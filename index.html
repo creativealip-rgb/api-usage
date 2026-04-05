@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CodexWatch — OpenAI Usage Monitor</title>
+    <meta name="description" content="Monitor your OpenAI Codex API usage, costs, and tokens across multiple accounts in real-time." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/src/styles/index.css" />
+  </head>
+  <body>
+    <div id="app">
+      <aside id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+          <div class="logo">
+            <div class="logo-icon">
+              <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                <circle cx="14" cy="14" r="12" stroke="url(#logoGrad)" stroke-width="2.5" />
+                <path d="M9 14.5L12.5 18L19 10" stroke="url(#logoGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <defs>
+                  <linearGradient id="logoGrad" x1="0" y1="0" x2="28" y2="28">
+                    <stop stop-color="#06b6d4" />
+                    <stop offset="1" stop-color="#8b5cf6" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            <div class="logo-text">
+              <span class="logo-title">CodexWatch</span>
+              <span class="logo-subtitle">Usage Monitor</span>
+            </div>
+          </div>
+        </div>
+        <nav class="sidebar-nav">
+          <button class="nav-item active" data-view="dashboard" id="nav-dashboard">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1"/>
+              <rect x="14" y="3" width="7" height="7" rx="1"/>
+              <rect x="3" y="14" width="7" height="7" rx="1"/>
+              <rect x="14" y="14" width="7" height="7" rx="1"/>
+            </svg>
+            <span>Dashboard</span>
+          </button>
+          <button class="nav-item" data-view="analytics" id="nav-analytics">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+            <span>Analytics</span>
+          </button>
+          <button class="nav-item" data-view="accounts" id="nav-accounts">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/>
+              <polyline points="10 17 15 12 10 7"/>
+              <line x1="15" y1="12" x2="3" y2="12"/>
+            </svg>
+            <span>Accounts</span>
+          </button>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="refresh-info">
+            <span class="refresh-label">Last refresh</span>
+            <span class="refresh-time" id="last-refresh">Never</span>
+          </div>
+          <button class="btn-refresh" id="btn-refresh-all" title="Refresh all data">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"/>
+              <polyline points="1 20 1 14 7 14"/>
+              <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+            </svg>
+            <span>Refresh</span>
+          </button>
+        </div>
+      </aside>
+
+      <main id="main-content" class="main-content">
+        <!-- Content injected by JS -->
+      </main>
+    </div>
+
+    <!-- Account Modal -->
+    <div id="account-modal" class="modal-overlay hidden">
+      <div class="modal" style="max-width:520px">
+        <div class="modal-header">
+          <h2 id="modal-title">Add Account</h2>
+          <button class="modal-close" id="modal-close">&times;</button>
+        </div>
+        <form id="account-form" class="modal-body">
+          <div class="form-group">
+            <label for="account-label">Account Label</label>
+            <input type="text" id="account-label" placeholder="e.g. My Codex Account" required />
+          </div>
+
+          <!-- Auth Type Tabs -->
+          <div class="auth-tabs" id="auth-tabs">
+            <button type="button" class="auth-tab active" data-auth="apiKey">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+              API Key
+            </button>
+            <button type="button" class="auth-tab" data-auth="oauth">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              OAuth Token
+            </button>
+          </div>
+
+          <!-- API Key Fields -->
+          <div id="auth-apikey-fields">
+            <div class="form-group">
+              <label for="account-api-key">Admin API Key</label>
+              <input type="password" id="account-api-key" placeholder="sk-admin-..." />
+              <small class="form-hint">Generate from <a href="https://platform.openai.com/settings/organization/admin-keys" target="_blank">OpenAI Admin Keys</a></small>
+            </div>
+          </div>
+
+          <!-- OAuth Token Fields -->
+          <div id="auth-oauth-fields" style="display:none">
+            <div class="form-group">
+              <label for="account-access-token">Access Token</label>
+              <textarea id="account-access-token" placeholder="eyJhbGciOiJSUzI1NiIs..." rows="3" style="width:100%;padding:12px 16px;background:var(--bg-glass);border:1px solid var(--border-secondary);border-radius:var(--radius-md);color:var(--text-primary);font-family:var(--font-family);font-size:0.85rem;outline:none;resize:vertical;transition:all var(--transition-fast);"></textarea>
+              <small class="form-hint">Paste the <code>access_token</code> from your Codex CLI or browser session</small>
+            </div>
+            <div class="form-group">
+              <label for="account-refresh-token">Refresh Token <span class="optional">(optional)</span></label>
+              <input type="password" id="account-refresh-token" placeholder="v1:refresh:..." />
+            </div>
+            <div class="form-group">
+              <label for="account-expires-at">Expires At <span class="optional">(optional)</span></label>
+              <input type="datetime-local" id="account-expires-at" style="color-scheme:dark;" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="account-org-id">Organization ID <span class="optional">(optional)</span></label>
+            <input type="text" id="account-org-id" placeholder="org-..." />
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" id="modal-cancel">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="modal-submit">Add Account</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
