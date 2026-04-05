@@ -121,4 +121,22 @@ export const api = {
     }
     return res.json();
   },
+
+  async collectOpenClawSnapshot() {
+    const res = await fetch(`${BASE_URL}/openclaw/collect`, { method: 'POST' });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to collect OpenClaw snapshot');
+    }
+    return res.json();
+  },
+
+  async getOpenClawHistory(range = '7d') {
+    const res = await fetch(`${BASE_URL}/openclaw/history?range=${encodeURIComponent(range)}`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to fetch OpenClaw history');
+    }
+    return res.json();
+  },
 };

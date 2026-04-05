@@ -1031,7 +1031,17 @@ a:hover {
 
   .main-content {
     margin-left: 0;
-    padding: 20px;
+    padding: 16px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .date-range-bar {
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   .cards-grid {
@@ -1040,6 +1050,14 @@ a:hover {
 
   .accounts-grid {
     grid-template-columns: 1fr;
+  }
+
+  .table-card {
+    overflow-x: auto;
+  }
+
+  .data-table {
+    min-width: 680px;
   }
 }
 

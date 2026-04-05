@@ -157,9 +157,7 @@ async function loadDashboardData(accounts, range, Chart) {
     const usageCapable = accounts.some((a) => a.supportsUsage !== false);
 
     if (!usageCapable) {
-      await loadOpenClawSessionUsage(accounts);
-      if (costChartInstance) { costChartInstance.destroy(); costChartInstance = null; }
-      if (tokenChartInstance) { tokenChartInstance.destroy(); tokenChartInstance = null; }
+      await loadOpenClawSessionUsage(accounts, range, Chart);
       return;
     }
 
@@ -278,15 +276,20 @@ async function loadDashboardData(accounts, range, Chart) {
   }
 }
 
-async function loadOpenClawSessionUsage(accounts) {
-  const data = await api.getOpenClawUsage();
-  const sessions = data?.sessions?.recent || [];
+async function loadOpenClawSessionUsage(accounts, range, Chart) {
+  // force one fresh snapshot before reading history
+  try { await api.collectOpenClawSnapshot(); } catch {}
 
+  const [liveData, historyData] = await Promise.all([
+    api.getOpenClawUsage(),
+    api.getOpenClawHistory(range || '7d'),
+  ]);
+
+  const sessions = liveData?.sessions?.recent || [];
   const fresh = sessions.filter((s) => s.totalTokensFresh && typeof s.totalTokens === 'number');
-  const totalTokens = fresh.reduce((sum, s) => sum + (s.totalTokens || 0), 0);
+
   const totalInput = fresh.reduce((sum, s) => sum + (s.inputTokens || 0), 0);
   const totalOutput = fresh.reduce((sum, s) => sum + (s.outputTokens || 0), 0);
-
   const totalRequests = fresh.length;
 
   document.getElementById('total-cost').textContent = 'N/A (session telemetry)';
@@ -297,7 +300,77 @@ async function loadOpenClawSessionUsage(accounts) {
   const warningEl = document.getElementById('usage-warning');
   if (warningEl) {
     warningEl.style.display = 'block';
-    warningEl.textContent = 'Showing OpenClaw session telemetry (not official OpenAI billing). Add Admin API Key account for official org cost/usage.';
+    warningEl.textContent = `Showing OpenClaw session telemetry for ${historyData?.days || 7} days (not official OpenAI billing). Add Admin API Key account for official org cost/usage.`;
+  }
+
+  const daily = historyData?.daily || [];
+  const labels = daily.map((d) => d.day.slice(5));
+
+  if (costChartInstance) { costChartInstance.destroy(); costChartInstance = null; }
+  if (tokenChartInstance) { tokenChartInstance.destroy(); tokenChartInstance = null; }
+
+  const costCanvas = document.getElementById('cost-chart');
+  if (costCanvas) {
+    costChartInstance = new Chart(costCanvas, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Total Tokens (Daily)',
+          data: daily.map((d) => d.totalTokens || 0),
+          backgroundColor: 'rgba(37,99,235,0.18)',
+          borderColor: '#2563eb',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.35,
+          pointRadius: 2,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          y: { ticks: { callback: (v) => formatTokens(v) } },
+        },
+      },
+    });
+  }
+
+  const tokenCanvas = document.getElementById('token-chart');
+  if (tokenCanvas) {
+    tokenChartInstance = new Chart(tokenCanvas, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Input Tokens',
+            data: daily.map((d) => d.inputTokens || 0),
+            backgroundColor: 'rgba(139, 92, 246, 0.45)',
+            borderColor: '#8b5cf6',
+            borderWidth: 1,
+            borderRadius: 4,
+          },
+          {
+            label: 'Output Tokens',
+            data: daily.map((d) => d.outputTokens || 0),
+            backgroundColor: 'rgba(6, 182, 212, 0.45)',
+            borderColor: '#06b6d4',
+            borderWidth: 1,
+            borderRadius: 4,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          y: { ticks: { callback: (v) => formatTokens(v) } },
+        },
+      },
+    });
   }
 
   const tbody = document.getElementById('account-table-body');
