@@ -70,14 +70,14 @@ export const api = {
 
   async getAllCosts(params = {}) {
     const query = new URLSearchParams(params).toString();
-    const res = await fetch(`${BASE_URL}/usage/all/costs?${query}`);
+    const res = await fetch(`${BASE_URL}/usage/batch/all/costs?${query}`);
     if (!res.ok) throw new Error('Failed to fetch all costs');
     return res.json();
   },
 
   async getAllCompletions(params = {}) {
     const query = new URLSearchParams(params).toString();
-    const res = await fetch(`${BASE_URL}/usage/all/completions?${query}`);
+    const res = await fetch(`${BASE_URL}/usage/batch/all/completions?${query}`);
     if (!res.ok) throw new Error('Failed to fetch all completions');
     return res.json();
   },

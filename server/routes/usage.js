@@ -124,8 +124,8 @@ usageRouter.get('/:accountId/completions', async (req, res) => {
   }
 });
 
-// GET /api/usage/all/costs - Fetch costs for all accounts
-usageRouter.get('/all/costs', async (req, res) => {
+// GET /api/usage/batch/all/costs - Fetch costs for all accounts
+usageRouter.get('/batch/all/costs', async (req, res) => {
   const { start_time, end_time, bucket_width, group_by, limit } = req.query;
   const accounts = readAccounts();
 
@@ -158,8 +158,8 @@ usageRouter.get('/all/costs', async (req, res) => {
   );
 });
 
-// GET /api/usage/all/completions - Fetch completions for all accounts
-usageRouter.get('/all/completions', async (req, res) => {
+// GET /api/usage/batch/all/completions - Fetch completions for all accounts
+usageRouter.get('/batch/all/completions', async (req, res) => {
   const { start_time, end_time, bucket_width, group_by, limit } = req.query;
   const accounts = readAccounts();
 
